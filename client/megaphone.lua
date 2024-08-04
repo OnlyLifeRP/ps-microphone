@@ -27,24 +27,12 @@ function AddPropToPlayerAndAnim(prop1, bone, off1, off2, off3, rot1, rot2, rot3)
     TaskPlayAnim(Player, "amb@world_human_mobile_film_shocking@female@base", "base", 8.0, 1.0, -1, 49, 0, 0, 0, 0)
 end
 
-RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
-    if holdingMega then
-        local _HasMegaphone = false
-        for _, item in pairs(val.items) do
-            if item.name == "megaphone" then
-                _HasMegaphone = true
-                break
-            end
-        end
-        if not _HasMegaphone then
-            holdingMega = false
-            ClearPedTasksImmediately(PlayerPedId())
-            exports["pma-voice"]:clearProximityOverride()
-        end
-    end
-end)
+local forceRemoveMegaphone = function()
+    ClearPedTasksImmediately(PlayerPedId())
+    exports["pma-voice"]:clearProximityOverride()
+end
 
-RegisterNetEvent("megaphone:Toggle", function()
+local toggleMegaphone = function()
     if not holdingMega then
         holdingMega = true
         CreateThread(function()
@@ -66,4 +54,8 @@ RegisterNetEvent("megaphone:Toggle", function()
         DeleteEntity(prop)
         exports["pma-voice"]:clearProximityOverride()
     end
-end)
+end
+
+RegisterNetEvent("megaphone:Toggle", toggleMegaphone)
+exports('toggleMegaphone', toggleMegaphone)
+exports('forceRemoveMegaphone', forceRemoveMegaphone)

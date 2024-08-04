@@ -1,13 +1,28 @@
 local oldProximity = 0.0
+local defaultProp = "v_ilev_fos_mic"
+local zones = {}
 
-local prop = "v_ilev_fos_mic"
 
-function string.starts(String,Start)    
-    return string.sub(String,1,string.len(Start))==Start 
+local onEnter = function(self)
+    oldProximity =  LocalPlayer.state['proximity'].distance
+    exports["pma-voice"]:overrideProximityRange(self.data.range, true)
+end
+
+local onExit = function(self)
+    exports["pma-voice"]:clearProximityOverride()
 end
 CreateThread(function()
     for k, v in pairs(Config.MicrophoneZones) do
-        exports["ps-zones"]:CreateBoxZone("microphone_"..v.name, v.coords, v.length, v.width, v.data)
+        table.insert(zones, 
+            lib.zones.box({
+                coords = v.coords,
+                size = v.size,
+                range = v.range,
+                onEnter = onEnter,
+                onExit = onExit,
+                debug = Config.Showzone
+            })
+        )
     end
 end)
 
@@ -15,14 +30,13 @@ Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(7)
         inRange = false
-        local ped = PlayerPedId()
-        local pos = GetEntityCoords(ped)
+        local pos = GetEntityCoords(cache.ped)
         for k,v in ipairs(Config.MicrophoneZones) do
             if v.spawnProp then
                 local dist = #(pos - v.coords)
                 if dist <= 150.0 then
                     if v.obj == nil then
-                        local obj = CreateObject(GetHashKey(prop), vector3(v.coords.x, v.coords.y, v.coords.z - 1.0), false)
+                        local obj = CreateObject(GetHashKey(v.prop or defaultProp), vector3(v.coords.x, v.coords.y, v.coords.z - 1.0), false)
                         if v.data.heading ~= nil then
                             SetEntityHeading(obj, v.heading)
                         end
@@ -42,18 +56,6 @@ Citizen.CreateThread(function()
 			Citizen.Wait(500)
 		end
 	end
-end)
-RegisterNetEvent("ps-zones:enter", function(ZoneName, ZoneData)
-    if string.starts(ZoneName, "microphone_") then
-        oldProximity =  LocalPlayer.state['proximity'].distance
-        exports["pma-voice"]:overrideProximityRange(ZoneData.range, true)
-    end
-end)
-
-RegisterNetEvent("ps-zones:leave", function(ZoneName, ZoneData)
-    if string.starts(ZoneName, "microphone_") then
-        exports["pma-voice"]:clearProximityOverride()
-    end
 end)
 
 AddEventHandler('onResourceStop', function(resource)
